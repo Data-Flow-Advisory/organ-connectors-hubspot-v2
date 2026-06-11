@@ -1,0 +1,31 @@
+{
+  "_comment": "Connection-standard port declaration for this organ. `inputs` are the top-level keys decide() reads from `state`; `outputs` are the top-level keys decide() writes under its `output`. Every `type` is a key in the local types.json vocabulary. This organ DISPATCHES on `state.operation`: the `build_request` path writes {method, base_url, path, url, params, json_body, headers, object_type, properties, requires_auth} and the `normalize_response` path writes {columns, rows, row_count, truncated}. `outputs` is therefore the UNION across both paths — every listed output is produced by at least one operation, and no operation produces an output not listed (verified by check_ports.py). decide() also accepts an optional `context.has_access_token` (a confidence-only auth signal) — context is not state, so it is intentionally not declared as a port. `params` and `json_body` are object-typed but may be null on paths that do not use them.",
+  "organ": "organ-connectors-hubspot",
+  "inputs": [
+    {"name": "operation", "type": "string", "required": false},
+    {"name": "action", "type": "string", "required": false},
+    {"name": "entity_type", "type": "string", "required": false},
+    {"name": "limit", "type": "integer", "required": false},
+    {"name": "properties", "type": "array", "required": false},
+    {"name": "query", "type": "string", "required": false},
+    {"name": "entity_id", "type": "string", "required": false},
+    {"name": "fields", "type": "object", "required": false},
+    {"name": "body", "type": "object", "required": false}
+  ],
+  "outputs": [
+    {"name": "method", "type": "string"},
+    {"name": "base_url", "type": "string"},
+    {"name": "path", "type": "string"},
+    {"name": "url", "type": "string"},
+    {"name": "params", "type": "object"},
+    {"name": "json_body", "type": "object"},
+    {"name": "headers", "type": "object"},
+    {"name": "object_type", "type": "string"},
+    {"name": "properties", "type": "array"},
+    {"name": "requires_auth", "type": "boolean"},
+    {"name": "columns", "type": "array"},
+    {"name": "rows", "type": "array"},
+    {"name": "row_count", "type": "integer"},
+    {"name": "truncated", "type": "boolean"}
+  ]
+}

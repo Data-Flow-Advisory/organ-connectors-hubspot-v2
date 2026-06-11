@@ -6,6 +6,8 @@ name: conformance
 #   - emits {output, rationale, self_metric} with a numeric confidence in [0,1]
 #   - is deterministic
 #   - is stdlib-only (no third-party imports)
+#   - declares its connection-standard ports (ports.json) against the
+#     types.json vocabulary, validated by check_ports.py
 
 on:
   push:
@@ -24,15 +26,21 @@ jobs:
       - name: Structure check
         run: |
           set -euo pipefail
-          for f in organ.py test_organ.py README.md; do
+          for f in organ.py test_organ.py README.md ports.json types.json check_ports.py; do
             [ -f "$f" ] || { echo "FAIL: $f not found"; exit 1; }
           done
           [ -d samples ] && ls samples/*.json >/dev/null 2>&1 || { echo "FAIL: no sample JSON"; exit 1; }
           echo "✓ structure valid"
 
+      - name: Validate port contract (ports.json)
+        run: |
+          set -euo pipefail
+          python3 check_ports.py
+          echo "✓ port contract valid"
+
       - name: Syntax check
         run: |
-          python3 -m py_compile organ.py test_organ.py
+          python3 -m py_compile organ.py test_organ.py check_ports.py
           echo "✓ syntax valid"
 
       - name: Run unit tests

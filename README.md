@@ -141,4 +141,38 @@ python3 test_organ.py
 | `organ.py` | the pure decider (`decide` / `run_organ` / `main`) |
 | `test_organ.py` | unit + subprocess-contract tests |
 | `samples/*.json` | committed shadow-run inputs |
-| `.github/workflows/conformance.yml` | CI: tests, shadow-run, contract, determinism, stdlib-only |
+| `ports.json` | connection-standard port declaration (`inputs` / `outputs`) |
+| `types.json` | local mirror of the type vocabulary each port maps to |
+| `check_ports.py` | CI check: ports parse, types are in vocab, decide reads/writes declared names |
+| `.github/workflows/conformance.yml` | CI: tests, shadow-run, contract, determinism, stdlib-only, port contract |
+
+## Connection-standard ports
+
+`ports.json` declares this organ's wiring contract per the orchestrator
+connection standard (`CONNECTORS.md`):
+
+- **`inputs`** — the top-level keys `decide()` reads from `state`, each with a
+  `type` (from `types.json`) and a `required` flag. All inputs here are optional
+  because the organ fails safe on an empty `state`.
+- **`outputs`** — the top-level keys `decide()` writes under `output`. This
+  organ dispatches on `state.operation`, so the two operations emit different
+  key sets; `outputs` is the **union**: `build_request` writes `method`,
+  `base_url`, `path`, `url`, `params`, `json_body`, `headers`, `object_type`,
+  `properties`, `requires_auth`; `normalize_response` writes `columns`, `rows`,
+  `row_count`, `truncated`.
+
+`context.has_access_token` is a confidence-only auth signal, not `state`, so it
+is intentionally **not** a declared port.
+
+`check_ports.py` (wired into the conformance workflow) asserts: ports.json
+parses with the `{inputs, outputs}` shape; every declared `type` exists in the
+`types.json` vocabulary; `decide()` reads every declared input from `state`; and
+the union of output keys produced across representative states equals the
+declared `outputs` (no undeclared outputs, no dead ports).
+
+> **Note — vendored vocabulary.** `types.json` is a local mirror. At authoring
+> time the canonical vocabulary at
+> `Data-Flow-Advisory/orchestrator@feat/drift-gate/types.json` was unreachable
+> (the orchestrator repo returned HTTP 404), so a conservative JSON-primitive
+> vocabulary was vendored to keep conformance self-contained and green.
+> Reconcile the type names with the canonical `types.json` once it is readable.
