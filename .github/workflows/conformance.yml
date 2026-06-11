@@ -1,0 +1,94 @@
+name: conformance
+
+# Validate this organ meets the pure-organ CONTRACT:
+#   - unit tests pass
+#   - shadow-runs cleanly on every committed sample
+#   - emits {output, rationale, self_metric} with a numeric confidence in [0,1]
+#   - is deterministic
+#   - is stdlib-only (no third-party imports)
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Structure check
+        run: |
+          set -euo pipefail
+          for f in organ.py test_organ.py README.md; do
+            [ -f "$f" ] || { echo "FAIL: $f not found"; exit 1; }
+          done
+          [ -d samples ] && ls samples/*.json >/dev/null 2>&1 || { echo "FAIL: no sample JSON"; exit 1; }
+          echo "✓ structure valid"
+
+      - name: Syntax check
+        run: |
+          python3 -m py_compile organ.py test_organ.py
+          echo "✓ syntax valid"
+
+      - name: Run unit tests
+        run: |
+          python3 test_organ.py
+
+      - name: Shadow-run on samples
+        run: |
+          set -euo pipefail
+          echo "# HubSpot Connector Organ — Conformance" >> "$GITHUB_STEP_SUMMARY"
+          for sample in samples/*.json; do
+            echo "## $(basename "$sample")" >> "$GITHUB_STEP_SUMMARY"
+            out="$(ORGAN_INPUT="$sample" python3 organ.py)"
+            printf '```json\n%s\n```\n' "$out" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - name: Validate contract
+        run: |
+          set -euo pipefail
+          grep -q "def decide" organ.py || { echo "FAIL: decide() not found"; exit 1; }
+          grep -q "def run_organ" organ.py || { echo "FAIL: run_organ() not found"; exit 1; }
+          grep -q "def main" organ.py || { echo "FAIL: main() not found"; exit 1; }
+          python3 -c "
+          import json, subprocess, sys, glob
+          for sample in sorted(glob.glob('samples/*.json')):
+              r = subprocess.run([sys.executable, 'organ.py'], stdin=open(sample),
+                                 capture_output=True, text=True)
+              assert r.returncode == 0, f'{sample}: rc={r.returncode} stderr={r.stderr}'
+              o = json.loads(r.stdout)
+              for k in ('output', 'rationale', 'self_metric'):
+                  assert k in o, f'{sample}: missing {k}'
+              c = o['self_metric']['confidence']
+              assert isinstance(c, (int, float)) and 0.0 <= c <= 1.0, f'{sample}: bad confidence {c}'
+          print('✓ contract validated')
+          "
+
+      - name: Verify determinism
+        run: |
+          python3 -c "
+          import json, subprocess, sys, glob
+          for sample in sorted(glob.glob('samples/*.json')):
+              a = subprocess.run([sys.executable, 'organ.py'], stdin=open(sample), capture_output=True, text=True).stdout
+              b = subprocess.run([sys.executable, 'organ.py'], stdin=open(sample), capture_output=True, text=True).stdout
+              assert a == b, f'{sample}: non-deterministic'
+          print('✓ deterministic')
+          "
+
+      - name: Verify stdlib-only
+        run: |
+          python3 -c "
+          import re
+          content = open('organ.py').read()
+          imports = re.findall(r'^(?:from|import)\s+(\w+)', content, re.MULTILINE)
+          allowed = {'json', 'sys', 'os', 'typing', 'dataclasses', '__future__'}
+          external = set(imports) - allowed
+          if external:
+              print(f'FAIL: external imports: {external}'); raise SystemExit(1)
+          print('✓ stdlib-only')
+          "

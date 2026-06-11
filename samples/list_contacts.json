@@ -1,0 +1,9 @@
+{
+  "state": {
+    "operation": "build_request",
+    "action": "list",
+    "entity_type": "contacts",
+    "limit": 100
+  },
+  "context": { "has_access_token": true }
+}

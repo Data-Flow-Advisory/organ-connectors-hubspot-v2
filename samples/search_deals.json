@@ -1,0 +1,9 @@
+{
+  "state": {
+    "operation": "build_request",
+    "action": "search",
+    "entity_type": "deals",
+    "query": "acme renewal"
+  },
+  "context": { "has_access_token": true }
+}

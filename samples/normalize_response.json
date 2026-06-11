@@ -1,0 +1,13 @@
+{
+  "state": {
+    "operation": "normalize_response",
+    "body": {
+      "results": [
+        {"id": "101", "properties": {"email": "ann@acme.com", "firstname": "Ann", "lastname": "Lee"}},
+        {"id": "102", "properties": {"email": "cy@acme.com", "firstname": "Cy", "lastname": "Park"}}
+      ],
+      "paging": { "next": { "after": "102" } }
+    }
+  },
+  "context": {}
+}
