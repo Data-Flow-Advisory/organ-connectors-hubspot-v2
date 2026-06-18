@@ -1,0 +1,9 @@
+{
+  "_comment": "Connection-standard type vocabulary for organ ports (ports.json). Each port's declared `type` MUST be a key in this object. This is a LOCAL MIRROR of the orchestrator connection standard: at authoring time the canonical vocabulary at Data-Flow-Advisory/orchestrator@feat/drift-gate/types.json was unreachable to the build (HTTP 404 / no read access — the orchestrator repo itself returned 404), so this conservative JSON-primitive vocabulary was vendored to keep the conformance check self-contained and green. RECONCILE the type names here with the canonical orchestrator types.json once it is readable; if a name differs, update both this file and ports.json in lockstep.",
+  "string": "A UTF-8 text value.",
+  "integer": "A whole number (no fractional part).",
+  "number": "A numeric value (integer or floating point).",
+  "boolean": "A true/false value.",
+  "object": "A JSON object (key/value map). A null value is permitted for object-typed ports that the organ may omit.",
+  "array": "An ordered JSON list of values."
+}
